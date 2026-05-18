@@ -1,0 +1,47 @@
+primary:
+  - title: Home
+    url: /
+  - title: Documentation
+    url: /docs/
+  - title: About
+    url: /about/
+
+docs:
+  - heading: Start Here
+    items:
+      - title: Installation Guide
+        url: /docs/install/
+      - title: CLI Command Reference
+        url: /docs/cli-commands/
+      - title: Production Deployment
+        url: /docs/production-deployment/
+      - title: Management API Integration
+        url: /docs/management-api-integration/
+  - heading: Core Docs
+    items:
+      - title: API Key Management
+        url: /docs/api-key-management/
+      - title: API Specification
+        url: /docs/api-specification/
+      - title: Config Storage
+        url: /docs/config-storage/
+      - title: Editions
+        url: /docs/editions/
+      - title: Route Enabled Feature
+        url: /docs/route-enabled-feature/
+      - title: Routes Example
+        url: /docs/routes-example/
+  - heading: Plugin Docs
+    items:
+      - title: Plugin Quickstart
+        url: /docs/plugin-quickstart/
+      - title: Plugin Development
+        url: /docs/plugin-development/
+      - title: Plugin Examples
+        url: /docs/plugin-examples/
+      - title: Middleware Plugins
+        url: /docs/middleware-plugins/
+  - heading: Reference Notes
+    items:
+      - title: Code Review
+        url: /docs/code-review/

@@ -1,0 +1,90 @@
+---
+layout: default
+---
+
+{% assign docs_pages = site.pages | where: "layout", "docs_page" | sort: "weight" | sort: "section_order" %}
+{% assign nav_sections = docs_pages | group_by: "section" %}
+{% assign flat_items = docs_pages %}
+
+{% assign current_index = -1 %}
+{% for item in flat_items %}
+  {% if item.url == page.url %}
+    {% assign current_index = forloop.index0 %}
+  {% endif %}
+{% endfor %}
+
+{% assign previous_index = current_index | minus: 1 %}
+{% assign next_index = current_index | plus: 1 %}
+
+<div class="docs-shell">
+  <aside class="docs-sidebar">
+    <div class="docs-sidebar__inner">
+      <p class="docs-sidebar__eyebrow">Iket Docs</p>
+      <h2 class="docs-sidebar__title">Documentation</h2>
+      <p class="docs-sidebar__summary">Browse installation, operations, plugin, and API guides from one place.</p>
+
+      <nav class="docs-nav" aria-label="Documentation">
+        {% for section in nav_sections %}
+          <section class="docs-nav__section">
+            <h3 class="docs-nav__heading">{{ section.name }}</h3>
+            <ul class="docs-nav__list">
+              {% assign section_items = section.items | sort: "weight" %}
+              {% for item in section_items %}
+                <li class="docs-nav__item">
+                  <a href="{{ item.url }}" class="docs-nav__link{% if item.url == page.url %} is-active{% endif %}">{{ item.title }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% endfor %}
+      </nav>
+    </div>
+  </aside>
+
+  <article class="docs-content">
+    <header class="docs-content__header">
+      <a class="docs-content__back" href="/docs/">Back to Docs Hub</a>
+      <h1 class="docs-content__title">{{ page.title }}</h1>
+      {% if page.summary %}
+        <p class="docs-content__summary">{{ page.summary }}</p>
+      {% endif %}
+      {% if page.audience or page.topics %}
+        <div class="docs-meta" aria-label="Document metadata">
+          {% for label in page.audience %}
+            <span class="docs-meta__chip docs-meta__chip--audience">{{ label }}</span>
+          {% endfor %}
+          {% for label in page.topics %}
+            <span class="docs-meta__chip">{{ label }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </header>
+
+    <div class="docs-content__body">
+      {{ content }}
+    </div>
+
+    {% if current_index >= 0 %}
+      <nav class="docs-pager" aria-label="Documentation pager">
+        <div class="docs-pager__slot">
+          {% if previous_index >= 0 %}
+            {% assign previous_doc = flat_items[previous_index] %}
+            <a class="docs-pager__link docs-pager__link--prev" href="{{ previous_doc.url }}">
+              <span class="docs-pager__label">Previous</span>
+              <span class="docs-pager__title">{{ previous_doc.title }}</span>
+            </a>
+          {% endif %}
+        </div>
+        <div class="docs-pager__slot docs-pager__slot--next">
+          {% if next_index < flat_items.size %}
+            {% assign next_doc = flat_items[next_index] %}
+            <a class="docs-pager__link docs-pager__link--next" href="{{ next_doc.url }}">
+              <span class="docs-pager__label">Next</span>
+              <span class="docs-pager__title">{{ next_doc.title }}</span>
+            </a>
+          {% endif %}
+        </div>
+      </nav>
+    {% endif %}
+  </article>
+</div>

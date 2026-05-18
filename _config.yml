@@ -1,0 +1,16 @@
+title: Iket API Gateway
+email: team@kayys.tech
+description: >-
+  Iket is a lightweight, extensible API gateway for HTTP, GraphQL, gRPC, SSE,
+  and WebSocket workloads with mTLS administration, plugin support, and
+  operator-focused tooling.
+baseurl: ""
+url: "https://iket-gateway.github.io"
+github_username: bhangun
+header_pages:
+  - docs.markdown
+  - about.markdown
+
+theme: minima
+plugins:
+  - jekyll-feed

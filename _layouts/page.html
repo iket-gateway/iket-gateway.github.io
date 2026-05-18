@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: site.lang | default: 'en' }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+      {%- if page.title -%}
+        {{ page.title }} | {{ site.title }}
+      {%- else -%}
+        {{ site.title }}
+      {%- endif -%}
+    </title>
+    <meta name="description" content="{{ page.description | default: site.description }}">
+    <link rel="stylesheet" href="{{ '/assets/main.css' | relative_url }}">
+    {%- feed_meta -%}
+  </head>
+  {%- assign is_docs_page = false -%}
+  {%- if page.url == '/docs/' or page.url contains '/docs/' -%}
+    {%- assign is_docs_page = true -%}
+  {%- endif -%}
+  <body class="{% if is_docs_page %}docs-page{% else %}site-page{% endif %}">
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <a class="brand-mark" href="{{ '/' | relative_url }}">I</a>
+          <div class="brand-copy">
+            <a class="brand-title" href="{{ '/' | relative_url }}">{{ site.title }}</a>
+            <p class="brand-tag">{{ site.description }}</p>
+          </div>
+        </div>
+
+        <nav class="nav-panel" aria-label="Primary">
+          <p class="nav-label">Navigate</p>
+          <ul class="nav-list">
+            {%- for item in site.data.sidebar.primary -%}
+              <li>
+                <a href="{{ item.url | relative_url }}" class="{% if page.url == item.url %}is-active{% endif %}">
+                  {{ item.title }}
+                </a>
+              </li>
+            {%- endfor -%}
+          </ul>
+        </nav>
+
+        <div class="nav-panel docs-panel">
+          <p class="nav-label">Documentation</p>
+          {%- for section in site.data.sidebar.docs -%}
+            <section class="docs-group">
+              <h2>{{ section.heading }}</h2>
+              <ul class="nav-list nav-list-docs">
+                {%- for item in section.items -%}
+                  <li>
+                    <a href="{{ item.url | relative_url }}" class="{% if page.url == item.url %}is-active{% endif %}">
+                      {{ item.title }}
+                    </a>
+                  </li>
+                {%- endfor -%}
+              </ul>
+            </section>
+          {%- endfor -%}
+        </div>
+
+        <div class="sidebar-footer">
+          <a href="https://github.com/bhangun/iket">GitHub</a>
+          <a href="https://github.com/bhangun/iket/releases">Releases</a>
+        </div>
+      </aside>
+
+      <main class="main-pane">
+        <header class="hero {% if is_docs_page %}hero-docs{% endif %}">
+          <div>
+            <p class="eyebrow">{% if is_docs_page %}Iket Docs{% else %}Iket Platform{% endif %}</p>
+            <h1>{{ page.title | default: site.title }}</h1>
+            {%- if page.url == '/' -%}
+              <p class="hero-copy">A modern API gateway with secure operations, extensible policy controls, and practical rollout tooling.</p>
+            {%- elsif page.url == '/docs/' -%}
+              <p class="hero-copy">Everything from install guides and CLI references to plugin development and management API details.</p>
+            {%- elsif page.url == '/about/' -%}
+              <p class="hero-copy">Project background, links, and the product direction behind Iket.</p>
+            {%- else -%}
+              <p class="hero-copy">{{ page.description | default: site.description }}</p>
+            {%- endif -%}
+          </div>
+        </header>
+
+        <article class="content-card">
+          {{ content }}
+        </article>
+      </main>
+    </div>
+  </body>
+</html>
