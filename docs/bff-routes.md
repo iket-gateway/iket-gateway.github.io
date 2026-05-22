@@ -58,9 +58,9 @@ services:
 - `steps` are called in parallel by default.
 - `mode: sequential` runs steps in order, which is useful when later steps use earlier step output.
 - `required` defaults to `true`; required failures return `502`.
-- Step templates that reference `{{step.name...}}` automatically wait for that step while unrelated steps still run in parallel.
+- Step templates that reference {% raw %}`{{step.name...}}`{% endraw %} automatically wait for that step while unrelated steps still run in parallel.
 - `successStatusCodes` lets a step treat domain-valid statuses such as `404` as successful.
-- Optional step failures can still be reflected with fields such as `{{step.subscription.ok}}`.
+- Optional step failures can still be reflected with fields such as {% raw %}`{{step.subscription.ok}}`{% endraw %}.
 - `responseFields` builds the final JSON response with the same dotted field style used by route transforms.
 - `responseStatus` defaults to `200`; set it to a literal status or a template when a BFF command needs another success code.
 - `responseHeaders` sets final client response headers after templates are resolved.
@@ -69,7 +69,7 @@ services:
 
 ## Step Dependencies
 
-When a step template references another step with `{{step.name...}}`, Iket infers that dependency and waits for the referenced step before resolving the template. Use `dependsOn` when a step must wait even though it does not reference the dependency directly.
+When a step template references another step with {% raw %}`{{step.name...}}`{% endraw %}, Iket infers that dependency and waits for the referenced step before resolving the template. Use `dependsOn` when a step must wait even though it does not reference the dependency directly.
 
 ```yaml
 bff:
@@ -84,7 +84,7 @@ bff:
 
 In default parallel mode, steps without dependencies start immediately. A dependent step waits for every inferred or listed dependency, then receives those dependency results as template inputs. Dependencies must reference existing steps and cannot contain cycles.
 
-Iket validates `{{step.name...}}` template references at load time. Response templates can reference any step. Step-local templates such as `url`, `headers`, `queryParams`, `body`, `when`, `cacheKey`, and `fallback` infer dependencies automatically in default parallel mode, or can reference earlier steps when `mode: sequential` is used.
+Iket validates {% raw %}`{{step.name...}}`{% endraw %} template references at load time. Response templates can reference any step. Step-local templates such as `url`, `headers`, `queryParams`, `body`, `when`, `cacheKey`, and `fallback` infer dependencies automatically in default parallel mode, or can reference earlier steps when `mode: sequential` is used.
 
 ## Conditional Steps
 
@@ -136,7 +136,7 @@ Static values are validated at load time. Templated values are resolved after al
 
 ## Request JSON Requirements
 
-Use `requireRequestJSON` when a BFF route needs a valid incoming JSON body before any upstream steps run. Add `requiredRequestJSONPaths` when specific request fields are required by `{{request.json.path}}` templates.
+Use `requireRequestJSON` when a BFF route needs a valid incoming JSON body before any upstream steps run. Add `requiredRequestJSONPaths` when specific request fields are required by {% raw %}`{{request.json.path}}`{% endraw %} templates.
 
 ```yaml
 bff:
@@ -184,7 +184,7 @@ bff:
         body: 'json:{"id":"{{var.user_id}}","source":"fallback"}'
 ```
 
-Without `requireJSON`, Iket still parses valid JSON when present, but non-JSON bodies remain available through `{{step.name.body}}`. With `requireJSON: true`, empty or invalid JSON is treated as a step failure, so stale cache or fallback can recover it.
+Without `requireJSON`, Iket still parses valid JSON when present, but non-JSON bodies remain available through {% raw %}`{{step.name.body}}`{% endraw %}. With `requireJSON: true`, empty or invalid JSON is treated as a step failure, so stale cache or fallback can recover it.
 
 `requiredJSONPaths` validates that specific JSON fields exist. Setting any required path also implies that the body must be valid JSON.
 
@@ -217,7 +217,7 @@ bff:
       successStatusCodes: [200, 404]
 ```
 
-The configured status policy affects required-step failures, dependency handling, fallback decisions, metrics outcomes, and `{{step.name.ok}}`.
+The configured status policy affects required-step failures, dependency handling, fallback decisions, metrics outcomes, and {% raw %}`{{step.name.ok}}`{% endraw %}.
 
 ## Step Fallbacks
 
@@ -272,31 +272,33 @@ Each BFF upstream step emits structured logs with route, step, required flag, st
 
 | Token | Meaning |
 |---|---|
-| `{{var.name}}` | Route variable from the matched path |
-| `{{query.name}}` | Incoming query parameter |
-| `{{header.Name}}` | Incoming request header |
-| `{{request_id}}` | Gateway request ID |
-| `{{request_body}}` | Incoming request body for forwarding |
-| `{{request.json.path}}` | Value from the incoming JSON request body |
-| `{{step.name.status}}` | Upstream HTTP status |
-| `{{step.name.ok}}` | `true` when the step completed with a 2xx or 3xx response |
-| `{{step.name.body}}` | Raw upstream response body |
-| `{{step.name.attempts}}` | Number of attempts used by the step, including retries |
-| `{{step.name.cache_hit}}` | `true` when the step was served from the local BFF cache |
-| `{{step.name.cache_stale}}` | `true` when the step used stale cache after an upstream failure |
-| `{{step.name.coalesced}}` | `true` when the step reused an in-flight upstream call for the same cache key |
-| `{{step.name.fallback}}` | `true` when the step used its configured fallback |
-| `{{step.name.skipped}}` | `true` when the step did not run because its conditions did not match |
-| `{{step.name.json.path}}` | Value from an upstream JSON response |
-| `{{step.name.header.Name}}` | Upstream response header |
+| {% raw %}`{{var.name}}`{% endraw %} | Route variable from the matched path |
+| {% raw %}`{{query.name}}`{% endraw %} | Incoming query parameter |
+| {% raw %}`{{header.Name}}`{% endraw %} | Incoming request header |
+| {% raw %}`{{request_id}}`{% endraw %} | Gateway request ID |
+| {% raw %}`{{request_body}}`{% endraw %} | Incoming request body for forwarding |
+| {% raw %}`{{request.json.path}}`{% endraw %} | Value from the incoming JSON request body |
+| {% raw %}`{{step.name.status}}`{% endraw %} | Upstream HTTP status |
+| {% raw %}`{{step.name.ok}}`{% endraw %} | `true` when the step completed with a 2xx or 3xx response |
+| {% raw %}`{{step.name.body}}`{% endraw %} | Raw upstream response body |
+| {% raw %}`{{step.name.attempts}}`{% endraw %} | Number of attempts used by the step, including retries |
+| {% raw %}`{{step.name.cache_hit}}`{% endraw %} | `true` when the step was served from the local BFF cache |
+| {% raw %}`{{step.name.cache_stale}}`{% endraw %} | `true` when the step used stale cache after an upstream failure |
+| {% raw %}`{{step.name.coalesced}}`{% endraw %} | `true` when the step reused an in-flight upstream call for the same cache key |
+| {% raw %}`{{step.name.fallback}}`{% endraw %} | `true` when the step used its configured fallback |
+| {% raw %}`{{step.name.skipped}}`{% endraw %} | `true` when the step did not run because its conditions did not match |
+| {% raw %}`{{step.name.json.path}}`{% endraw %} | Value from an upstream JSON response |
+| {% raw %}`{{step.name.header.Name}}`{% endraw %} | Upstream response header |
 
-JSON paths use dot notation with optional array indexes, for example `{{request.json.items[0].sku}}` or `{{step.profile.json.roles[0]}}`. Use `[]` to collect array values, such as `{{request.json.items[].sku}}` or `{{step.catalog.json.products[].id}}`.
+JSON paths use dot notation with optional array indexes, for example {% raw %}`{{request.json.items[0].sku}}`{% endraw %} or {% raw %}`{{step.profile.json.roles[0]}}`{% endraw %}. Use `[]` to collect array values, such as {% raw %}`{{request.json.items[].sku}}`{% endraw %} or {% raw %}`{{step.catalog.json.products[].id}}`{% endraw %}.
 
-Add `| default:value` when optional data should fall back instead of resolving to an empty value, for example `{{request.json.locale | default:en-US}}` or `{{step.profile.json.name | default:Guest}}`. Numeric, boolean, and `null` defaults keep their JSON type when the whole template is a single value.
+Add `| default:value` when optional data should fall back instead of resolving to an empty value, for example {% raw %}`{{request.json.locale | default:en-US}}`{% endraw %} or {% raw %}`{{step.profile.json.name | default:Guest}}`{% endraw %}. Numeric, boolean, and `null` defaults keep their JSON type when the whole template is a single value.
 
-Use encoding filters when inserting dynamic values into structured strings: `| json` writes a JSON literal, `| urlquery` escapes a query value, and `| urlpath` escapes a path segment. Filters can be chained, for example `{{request.json.name | default:Guest | json}}`.
+Add `| required` or `| required:message` when a missing value should fail instead of becoming empty, for example {% raw %}`{{step.profile.json.id | required:profile id missing}}`{% endraw %}.
 
-Wildcard arrays can be reshaped with `| len` or `| join:separator`, for example `{{request.json.items[].sku | len}}` or `{{step.catalog.json.products[].id | join:, | urlquery}}`.
+Use encoding filters when inserting dynamic values into structured strings: `| json` writes a JSON literal, `| urlquery` escapes a query value, and `| urlpath` escapes a path segment. Filters can be chained, for example {% raw %}`{{request.json.name | default:Guest | json}}`{% endraw %}.
+
+Wildcard arrays can be reshaped with `| len` or `| join:separator`, for example {% raw %}`{{request.json.items[].sku | len}}`{% endraw %} or {% raw %}`{{step.catalog.json.products[].id | join:, | urlquery}}`{% endraw %}.
 
 ## Growth Path
 

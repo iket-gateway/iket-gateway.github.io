@@ -20,7 +20,11 @@ The documentation now lives on this website, so installation, operations, plugin
   {% for item in site.data.changefeed limit:3 %}
     <article class="changefeed-card">
       <span class="changefeed-card__label">{{ item.label }}</span>
-      <h3><a href="{{ item.url | relative_url }}">{{ item.title }}</a></h3>
+      {% if item.url contains '://' %}
+        <h3><a href="{{ item.url }}">{{ item.title }}</a></h3>
+      {% else %}
+        <h3><a href="{{ item.url | relative_url }}">{{ item.title }}</a></h3>
+      {% endif %}
       <p>{{ item.summary }}</p>
     </article>
   {% endfor %}
