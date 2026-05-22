@@ -14,6 +14,10 @@ topics: [plugins, extension, quickstart]
 
 This guide will help you create your first plugin for the Iket API Gateway in under 10 minutes.
 
+<div class="doc-note">
+  <p><strong>Use this guide when:</strong> you want the shortest path to a working plugin and do not need the full architecture details yet. It is the best first stop before the deeper plugin development guide.</p>
+</div>
+
 ## Prerequisites
 
 - Go 1.23 or later
@@ -29,6 +33,10 @@ go mod init my-first-plugin
 ```
 
 ## Step 2: Create Your Plugin
+
+<div class="doc-tip">
+  <p><strong>Keep the first plugin small:</strong> start with simple request logging, headers, or validation behavior first. Once the load and lifecycle flow is clear, move on to more stateful or policy-heavy plugins.</p>
+</div>
 
 Create a file called `plugin.go`:
 
@@ -81,6 +89,10 @@ go build -buildmode=plugin -o my-first-plugin.so plugin.go
 ```
 
 ## Step 4: Configure the Gateway
+
+<div class="doc-warning">
+  <p><strong>Important:</strong> make sure the plugin name in your exported Go object, compiled `.so` file, and gateway configuration stay aligned. Most first-run plugin issues come from naming or path mismatches.</p>
+</div>
 
 Update your `config/config.yaml`:
 
@@ -152,6 +164,19 @@ iket plugin disable my_first_plugin
 
 ## Resources
 
-- [Plugin Development Guide](/docs/plugin-development/) - Comprehensive guide.
-- [Plugin Examples](/docs/plugin-examples/) - More examples and patterns.
-- [Secure Administration](/docs/production-deployment/) - Learn how to secure your management API.
+- [Plugin Development Guide]({{ '/docs/plugin-development/' | relative_url }}) - Comprehensive guide.
+- [Plugin Examples]({{ '/docs/plugin-examples/' | relative_url }}) - More examples and patterns.
+- [Secure Administration]({{ '/docs/production-deployment/' | relative_url }}) - Learn how to secure your management API.
+
+## Next Steps
+
+<div class="docs-grid">
+  <article class="doc-card">
+    <h3><a href="{{ '/docs/plugin-development/' | relative_url }}">Go deeper into plugin architecture</a></h3>
+    <p>Continue here when you need lifecycle hooks, health checks, reload behavior, and cleaner implementation patterns.</p>
+  </article>
+  <article class="doc-card">
+    <h3><a href="{{ '/docs/plugin-examples/' | relative_url }}">Review more plugin patterns</a></h3>
+    <p>Use the examples page once your first plugin works and you want to compare structures or extend the pattern safely.</p>
+  </article>
+</div>

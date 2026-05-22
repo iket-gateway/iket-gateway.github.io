@@ -36,6 +36,9 @@ plugins:
     enabled: true
     header_name: "X-API-Key"  # Optional, default: X-API-Key
     query_param: "api_key"    # Optional, default: api_key
+    usage_observer_timeout: "100ms" # Optional, default observer timeout
+    usage_observer_async: false     # Optional, set true for non-blocking exports
+    usage_observer_async_max_in_flight: 1024 # Optional async safety cap
     clients:
       - id: "mobile-app"
         name: "Official iOS App"
@@ -123,6 +126,57 @@ When a request is authenticated, the following values are injected into the Go `
 | `apikey_client_id` | `string` | The unique ID of the client app. |
 | `apikey_group` | `string` | The group the client belongs to. |
 | `apikey_scopes` | `[]string` | The list of scopes assigned to the client. |
+
+### Usage & Metering Events
+The API key plugin also emits a redacted usage event for each client-attributed
+request. Community builds can use these events for local visibility and basic
+operational reporting, while enterprise or billing plugins can subscribe through
+the `ClientUsageObserver` contract and export billable usage without changing
+the core gateway path.
+
+Each event is designed to be safe to forward to metering systems:
+
+| Field | Description |
+|-------|-------------|
+| `schema_version` | Versioned event shape so downstream consumers can evolve safely. |
+| `event_id` | Unique event identifier for idempotent export and deduplication. |
+| `quantity` | Countable usage amount for the request, typically one request unless a plugin maps a different billable unit. |
+| Normalized dimensions | Stable client, group, route, service, method, and status-class style dimensions for aggregation. |
+| Request attribution | Redacted request identity such as client ID, route/service match, method, path template, and request ID when available. |
+| Response outcome | Status code, response bytes, and duration so billing and analytics can separate successful, rejected, and failed calls. |
+| Panic-safe outcome | Recovered handler panics are reported as `500` outcomes instead of dropping the usage record. |
+
+Before exporting an event, observer plugins should consume the normalized
+metering shape and validate it with the core contract. Validation checks the
+required `schema_version`, `event_id`, `provider`, `quantity`, `occurred_at`,
+canonical dimensions, response bounds, and sensitive identity redaction.
+The metering wrapper is transparent to normal handlers and preserves streaming
+and advanced response-writer capabilities such as flush, delegated stream copy,
+HTTP/2 push, and close notifications when the underlying server supports them.
+
+By default, usage observers are flushed before the authenticated request
+returns. For enterprise billing/export plugins that should never add tail
+latency to gateway traffic, set `usage_observer_async: true`. Async delivery
+detaches the observer context from request cancellation while preserving context
+values, then still applies the configured observer timeout. Async mode also
+uses `usage_observer_async_max_in_flight` as a bounded safety valve; when the
+cap is saturated, new observer deliveries are dropped instead of creating
+unbounded goroutines on the request path.
+
+Management plugin list responses expose a compact diagnostics summary through
+`diagnostics_available`, `diagnostics_status`, and warning codes when present.
+Plugin detail/status endpoints expose the full structured API-key diagnostics
+payload for automation. The full payload includes configured client count,
+usage observer count, named/unnamed observer counts, safe observer names,
+delivery mode, timeout, async max in-flight, current in-flight, and dropped
+async delivery count. It also includes a machine-readable `status` plus
+`warning_codes` such as `unnamed_observers_registered` and
+`async_deliveries_dropped`, so enterprise exporters can alert without parsing
+the human status string.
+
+Usage events never include raw API keys, raw secrets, or unredacted credential
+headers/query values. Treat client IDs and dimensions as reporting identifiers,
+not secret material.
 
 ### Authorization Logic
 1. **Authentication**: Validates that the provided key exists in the active client list.

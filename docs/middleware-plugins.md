@@ -299,6 +299,21 @@ if authP, err := registry.Get("auth"); err == nil {
 chain, err := registry.BuildMiddlewareChainFromTags("security", "authentication", finalHandler)
 ```
 
+`GetByType` accepts both modern `TypedPlugin` implementations that return
+`plugin.PluginType` and older plugins that expose `Type() string`. Results are
+ordered by plugin name so generated chains, tests, and CLI output stay stable.
+Tag-discovered middleware chains and bulk lifecycle, reload, health, and status
+operations use the same deterministic plugin-name snapshot before invoking
+plugin code. Global auto-discovered plugins are also snapshotted before
+registration, which avoids startup lock-order issues when plugin `Name()`
+methods touch global registration. Direct registration rejects nil plugins,
+empty plugin names, and panicking `Name()` implementations with plugin errors.
+Factory-backed plugins are loaded lazily through `registry.Get`;
+concurrent callers for the same plugin share the first load, and factory code
+runs outside the registry lock. Nil factories, nil plugin returns, invalid
+factory-created plugins, and factory panics fail as plugin errors instead of
+poisoning the registry cache.
+
 ### Health Checking and Status Reporting
 
 ```go

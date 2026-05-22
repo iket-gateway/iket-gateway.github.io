@@ -84,15 +84,32 @@ community router. The registered module catalog is available at
 `GET /api/v1/gateway/extensions`, one module can be inspected with
 `GET /api/v1/gateway/extensions/{name}`, and the CLI equivalents are
 `iket gateway extensions` and `iket gateway extension <name>`. The catalog can
-be filtered with `?supported=false`, `?capability=commercial.billing`,
-`?category=commercial`, or `?tag=billing`, which is useful for admin screens
-that show installed enterprise modules separately from modules available in the
-active edition. Extension metadata can declare one primary `Capability` for
-older clients, a `Capabilities` list when a module needs multiple gates, and
-optional `Category`/`Tags` values for UI and CLI discovery. Catalog responses
-also include a top-level `support` summary plus `extension_categories` and
+be filtered with `?supported=false`, `?support_status=capability_unavailable`,
+`?q=billing`, `?capability=commercial.billing`,
+`?unsupported_capability=commercial.billing`, `?category=commercial`,
+`?tag=billing`, `?release_stage=preview`, `?route_prefix=/enterprise`, or
+`?link_rel=docs`, plus provider filters such as `?provider_kind=enterprise` or
+`?provider=Iket%20Enterprise`, and compatibility filters such as
+`?compatibility_status=incompatible` and permission filters such as
+`?permission=billing.read`, which is useful for admin screens that show
+installed enterprise modules separately from modules available in the active
+edition. Extension metadata can declare one primary `Capability` for older
+clients, a `Capabilities` list when a module needs multiple gates, `Version`,
+`Compatibility` core-version constraints, `ReleaseStage` (`stable`, `preview`,
+or `deprecated`), `Provider` ownership metadata (`community`, `enterprise`,
+`partner`, or `custom`), declared management `Permissions`, optional
+`RoutePrefixes`, typed `Links` such as docs/support/pricing/install/changelog,
+and optional `Category`/`Tags` values for UI and CLI discovery. Catalog
+responses also include a top-level `support` summary plus `extension_stages`,
+`extension_compatibility`, `extension_providers`, `extension_permissions`,
+`extension_routes`, `extension_link_rels`, `extension_categories`, and
 `extension_tags` summaries so clients can render edition readiness and grouped
 extension browsers without rebuilding those facets themselves.
+
+Extension names are stable IDs, not display labels. Use lowercase letters,
+numbers, dots, underscores, or hyphens, and start/end with a letter or number
+such as `enterprise.billing`. Set `DisplayName` when the UI label should be more
+readable than the stable ID.
 
 ```go
 package enterprise
@@ -108,10 +125,43 @@ import (
 func init() {
 	managementapi.RegisterManagementRouteExtensionInfo(managementapi.ManagementRouteExtensionInfo{
 		Name:        "enterprise.billing",
+		DisplayName: "Enterprise Billing",
 		Description: "Billing, subscription, and usage management routes.",
-		Category:    "commercial",
-		Tags:        []string{"billing", "usage"},
-		Capability:  app.CapabilityBillingIntegration,
+		Version:     "1.2.0",
+		ReleaseStage: managementapi.ManagementRouteExtensionStageStable,
+		Compatibility: managementapi.ManagementRouteExtensionCompatibility{
+			MinimumIketVersion: "1.1.0",
+		},
+		Permissions: []managementapi.ManagementRouteExtensionPermission{
+			{
+				Key:         "billing.read",
+				Name:        "Read billing",
+				Description: "View billing accounts, plans, invoices, and usage.",
+			},
+			{
+				Key:         "billing.write",
+				Name:        "Manage billing",
+				Description: "Change billing accounts, subscriptions, and plans.",
+			},
+		},
+		Provider: managementapi.ManagementRouteExtensionProvider{
+			Kind: managementapi.ManagementRouteExtensionProviderEnterprise,
+			Name: "Iket Enterprise",
+			URL:  "https://iket.example.com/enterprise",
+		},
+		RoutePrefixes: []string{
+			"/enterprise/billing",
+		},
+		Links: []managementapi.ManagementRouteExtensionLink{
+			{
+				Rel:   managementapi.ManagementRouteExtensionLinkRelDocs,
+				URL:   "/docs/enterprise/billing",
+				Label: "Billing docs",
+			},
+		},
+		Category:     "commercial",
+		Tags:         []string{"billing", "usage"},
+		Capability:   app.CapabilityBillingIntegration,
 		Capabilities: []string{
 			app.CapabilityBillingIntegration,
 			app.CapabilityAuditTrails,

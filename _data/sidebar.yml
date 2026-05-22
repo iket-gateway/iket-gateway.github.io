@@ -8,6 +8,7 @@ primary:
 
 docs:
   - heading: Start Here
+    url: /docs/start-here/
     items:
       - title: Installation Guide
         url: /docs/install/
@@ -18,6 +19,7 @@ docs:
       - title: Management API Integration
         url: /docs/management-api-integration/
   - heading: Core Docs
+    url: /docs/core-docs/
     items:
       - title: API Key Management
         url: /docs/api-key-management/
@@ -27,11 +29,14 @@ docs:
         url: /docs/config-storage/
       - title: Editions
         url: /docs/editions/
+      - title: BFF Routes
+        url: /docs/bff-routes/
       - title: Route Enabled Feature
         url: /docs/route-enabled-feature/
       - title: Routes Example
         url: /docs/routes-example/
   - heading: Plugin Docs
+    url: /docs/plugin-docs/
     items:
       - title: Plugin Quickstart
         url: /docs/plugin-quickstart/
@@ -42,6 +47,7 @@ docs:
       - title: Middleware Plugins
         url: /docs/middleware-plugins/
   - heading: Reference Notes
+    url: /docs/reference-notes/
     items:
       - title: Code Review
         url: /docs/code-review/

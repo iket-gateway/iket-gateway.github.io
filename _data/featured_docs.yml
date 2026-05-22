@@ -1,0 +1,16 @@
+- title: Installation Guide
+  url: /docs/install/
+  tag: Start Here
+  summary: Bring up Iket locally, in Docker, or on a remote host with the recommended install flow.
+- title: CLI Command Reference
+  url: /docs/cli-commands/
+  tag: Operations
+  summary: Run day-to-day admin, rollout, config, and diagnostics workflows with `iket`.
+- title: Plugin Quickstart
+  url: /docs/plugin-quickstart/
+  tag: Extensibility
+  summary: Build your first plugin quickly and understand the smallest useful extension path.
+- title: Management API Integration
+  url: /docs/management-api-integration/
+  tag: Security
+  summary: Secure and integrate the management surface with mTLS-backed remote administration.

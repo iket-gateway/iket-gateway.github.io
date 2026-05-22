@@ -18,11 +18,13 @@
   {%- if page.url == '/docs/' or page.url contains '/docs/' -%}
     {%- assign is_docs_page = true -%}
   {%- endif -%}
-  <body class="{% if is_docs_page %}docs-page{% else %}site-page{% endif %}">
+  <body id="page-top" class="{% if is_docs_page %}docs-page{% else %}site-page{% endif %}">
     <div class="shell">
       <aside class="sidebar">
         <div class="brand">
-          <a class="brand-mark" href="{{ '/' | relative_url }}">I</a>
+          <a href="{{ '/' | relative_url }}">
+            <img class="brand-mark" src="{{ site.logo_url }}" alt="Iket logo">
+          </a>
           <div class="brand-copy">
             <a class="brand-title" href="{{ '/' | relative_url }}">{{ site.title }}</a>
             <p class="brand-tag">{{ site.description }}</p>
@@ -45,8 +47,14 @@
         <div class="nav-panel docs-panel">
           <p class="nav-label">Documentation</p>
           {%- for section in site.data.sidebar.docs -%}
-            <section class="docs-group">
-              <h2>{{ section.heading }}</h2>
+            <section class="docs-group {% if page.section == section.heading %}is-current{% endif %}">
+              <h2>
+                {% if section.url %}
+                  <a href="{{ section.url | relative_url }}">{{ section.heading }}</a>
+                {% else %}
+                  {{ section.heading }}
+                {% endif %}
+              </h2>
               <ul class="nav-list nav-list-docs">
                 {%- for item in section.items -%}
                   <li>
@@ -67,26 +75,276 @@
       </aside>
 
       <main class="main-pane">
+        <div class="mobile-topbar">
+          <a class="mobile-brand" href="{{ '/' | relative_url }}">
+            <img src="{{ site.logo_url }}" alt="Iket logo">
+            <span>{{ site.title }}</span>
+          </a>
+          <a class="mobile-cta" href="{{ '/docs/' | relative_url }}">Docs</a>
+        </div>
+
+        <details class="mobile-nav">
+          <summary class="mobile-nav__summary">Browse pages</summary>
+          <div class="mobile-nav__panel">
+            <nav class="mobile-nav__section" aria-label="Mobile primary">
+              <p class="mobile-nav__label">Navigate</p>
+              <div class="mobile-nav__links">
+                {%- for item in site.data.sidebar.primary -%}
+                  <a href="{{ item.url | relative_url }}" class="{% if page.url == item.url %}is-active{% endif %}">
+                    {{ item.title }}
+                  </a>
+                {%- endfor -%}
+              </div>
+            </nav>
+
+            <div class="mobile-nav__section">
+              <p class="mobile-nav__label">Documentation</p>
+              {%- for section in site.data.sidebar.docs -%}
+                <details class="mobile-nav__group {% if page.section == section.heading %}is-current{% endif %}" {% if page.section == section.heading or page.url contains '/docs/' and forloop.first %}open{% endif %}>
+                  <summary>{{ section.heading }}</summary>
+                  <div class="mobile-nav__links">
+                    {% if section.url %}
+                      <a href="{{ section.url | relative_url }}" class="mobile-nav__overview">Section overview</a>
+                    {% endif %}
+                    {%- for item in section.items -%}
+                      <a href="{{ item.url | relative_url }}" class="{% if page.url == item.url %}is-active{% endif %}">
+                        {{ item.title }}
+                      </a>
+                    {%- endfor -%}
+                  </div>
+                </details>
+              {%- endfor -%}
+            </div>
+          </div>
+        </details>
+
+        {% if is_docs_page %}
+          <nav class="mobile-docs-bar" aria-label="Mobile docs actions">
+            <a href="{{ '/docs/' | relative_url }}">Docs</a>
+            <a href="#docs-page-toc">On this page</a>
+            <a href="#page-top">Top</a>
+          </nav>
+        {% endif %}
+
         <header class="hero {% if is_docs_page %}hero-docs{% endif %}">
-          <div>
-            <p class="eyebrow">{% if is_docs_page %}Iket Docs{% else %}Iket Platform{% endif %}</p>
-            <h1>{{ page.title | default: site.title }}</h1>
-            {%- if page.url == '/' -%}
-              <p class="hero-copy">A modern API gateway with secure operations, extensible policy controls, and practical rollout tooling.</p>
-            {%- elsif page.url == '/docs/' -%}
-              <p class="hero-copy">Everything from install guides and CLI references to plugin development and management API details.</p>
-            {%- elsif page.url == '/about/' -%}
-              <p class="hero-copy">Project background, links, and the product direction behind Iket.</p>
-            {%- else -%}
-              <p class="hero-copy">{{ page.description | default: site.description }}</p>
-            {%- endif -%}
+          <div class="hero-grid">
+            <div>
+              <p class="eyebrow">{% if is_docs_page %}Iket Docs{% else %}Iket Platform{% endif %}</p>
+              <h1>{{ page.title | default: site.title }}</h1>
+              {%- if page.url == '/' -%}
+                <p class="hero-copy">A modern API gateway with secure operations, extensible policy controls, and practical rollout tooling.</p>
+              {%- elsif page.url == '/docs/' -%}
+                <p class="hero-copy">Everything from install guides and CLI references to plugin development and management API details.</p>
+              {%- elsif page.url == '/about/' -%}
+                <p class="hero-copy">Project background, links, and the product direction behind Iket.</p>
+              {%- else -%}
+                <p class="hero-copy">{{ page.description | default: site.description }}</p>
+              {%- endif -%}
+              {% if is_docs_page and page.section %}
+                <div class="hero-section-badge">{{ page.section }}</div>
+              {% endif %}
+              <div class="hero-actions">
+                <a class="button button-primary" href="{{ '/docs/' | relative_url }}">Explore Docs</a>
+                <a class="button button-secondary" href="https://github.com/bhangun/iket">GitHub</a>
+              </div>
+            </div>
+
+            <div class="hero-panel">
+              <div class="hero-panel__top">
+                <img class="hero-panel__logo" src="{{ site.logo_url }}" alt="Iket logo">
+                <div>
+                  <p class="hero-panel__label">Operator Snapshot</p>
+                  <p class="hero-panel__title">Secure edge workflows, without heavyweight platform overhead.</p>
+                </div>
+              </div>
+              <div class="hero-panel__chips">
+                <span class="hero-chip">mTLS Admin</span>
+                <span class="hero-chip">Canary Rollouts</span>
+                <span class="hero-chip">Plugin Runtime</span>
+                <span class="hero-chip">Docs First</span>
+              </div>
+              <pre class="hero-panel__code"><code>iket setup
+iket gateway status
+iket config diff ./config/config.yaml --merge</code></pre>
+            </div>
           </div>
         </header>
+
+        <section class="cta-strip">
+          <a class="cta-strip__card" href="{{ '/docs/install/' | relative_url }}">
+            <span class="cta-strip__eyebrow">Start</span>
+            <strong>Install Iket</strong>
+            <span>Bring up the gateway or CLI quickly.</span>
+          </a>
+          <a class="cta-strip__card" href="{{ '/docs/' | relative_url }}">
+            <span class="cta-strip__eyebrow">Explore</span>
+            <strong>Read the docs</strong>
+            <span>Browse setup, operations, plugins, and APIs.</span>
+          </a>
+          <a class="cta-strip__card" href="https://github.com/bhangun/iket">
+            <span class="cta-strip__eyebrow">Build</span>
+            <strong>Open the repo</strong>
+            <span>Inspect source, issues, and releases.</span>
+          </a>
+        </section>
 
         <article class="content-card">
           {{ content }}
         </article>
+
+        <section class="where-next">
+          <div class="where-next__intro">
+            <p class="where-next__eyebrow">Where Next</p>
+            <h2>Keep moving through Iket with the next useful step.</h2>
+            <p>
+              {% if page.url == '/' %}
+                Start with the docs hub, move into the onboarding path, or inspect the source and releases directly.
+              {% elsif page.url == '/docs/' %}
+                Jump into a section overview, return to the best starting path, or check the repository and releases.
+              {% elsif is_docs_page and page.section %}
+                Continue through the {{ page.section }} section, return to the docs hub, or inspect the source behind the gateway.
+              {% elsif page.url == '/about/' %}
+                Move into the docs, start the setup path, or inspect the project repository directly.
+              {% else %}
+                Return to the docs hub, choose a section overview, or inspect the project and release history.
+              {% endif %}
+            </p>
+          </div>
+          <div class="where-next__grid">
+            {% if is_docs_page and page.section == 'Start Here' %}
+              <a class="where-next__card" href="{{ '/docs/start-here/' | relative_url }}">
+                <span class="where-next__label">Section</span>
+                <strong>Start Here overview</strong>
+                <span>Follow installation, CLI, and production-readiness paths from one curated entry page.</span>
+              </a>
+            {% elsif is_docs_page and page.section == 'Core Docs' %}
+              <a class="where-next__card" href="{{ '/docs/core-docs/' | relative_url }}">
+                <span class="where-next__label">Section</span>
+                <strong>Core Docs overview</strong>
+                <span>Review configuration, editions, API shape, and route-oriented reference material together.</span>
+              </a>
+            {% elsif is_docs_page and page.section == 'Plugin Docs' %}
+              <a class="where-next__card" href="{{ '/docs/plugin-docs/' | relative_url }}">
+                <span class="where-next__label">Section</span>
+                <strong>Plugin Docs overview</strong>
+                <span>See the full extension path across quickstart, architecture, examples, and middleware.</span>
+              </a>
+            {% elsif is_docs_page and page.section == 'Reference Notes' %}
+              <a class="where-next__card" href="{{ '/docs/reference-notes/' | relative_url }}">
+                <span class="where-next__label">Section</span>
+                <strong>Reference Notes overview</strong>
+                <span>Use the supporting notes area for specialized maintenance and engineering workflows.</span>
+              </a>
+            {% else %}
+              <a class="where-next__card" href="{{ '/docs/' | relative_url }}">
+                <span class="where-next__label">Hub</span>
+                <strong>Open the docs hub</strong>
+                <span>Browse the full docs map, filters, section overviews, and featured starting points.</span>
+              </a>
+            {% endif %}
+
+            <a class="where-next__card" href="{{ '/docs/start-here/' | relative_url }}">
+              <span class="where-next__label">Path</span>
+              <strong>Follow the onboarding route</strong>
+              <span>Use the guided start path for installation, CLI workflows, and safe deployment progression.</span>
+            </a>
+
+            <a class="where-next__card" href="https://github.com/bhangun/iket">
+              <span class="where-next__label">Source</span>
+              <strong>Inspect the repository</strong>
+              <span>Review the implementation, issues, releases, and the wider project surface on GitHub.</span>
+            </a>
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <div class="site-footer__brand">
+            <img src="{{ site.logo_url }}" alt="Iket logo">
+            <div>
+              <strong>{{ site.title }}</strong>
+              <p>Open source gateway tooling for community and commercial workloads.</p>
+            </div>
+          </div>
+          <div class="site-footer__nav">
+            <p class="site-footer__eyebrow">Explore</p>
+            <div class="site-footer__links">
+              <a href="{{ '/' | relative_url }}">Home</a>
+              <a href="{{ '/docs/' | relative_url }}">Docs</a>
+              <a href="{{ '/docs/start-here/' | relative_url }}">Start Here</a>
+              <a href="{{ '/docs/plugin-docs/' | relative_url }}">Plugin Docs</a>
+              <a href="{{ '/about/' | relative_url }}">About</a>
+            </div>
+          </div>
+          <div class="site-footer__links">
+            <a href="{{ site.releases_url }}">Releases</a>
+            <a href="https://github.com/bhangun/iket">GitHub</a>
+          </div>
+        </footer>
       </main>
     </div>
+    <script>
+      (function () {
+        if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          return;
+        }
+
+        var selectors = [
+          ".hero",
+          ".hero-panel",
+          ".cta-strip__card",
+          ".release-banner",
+          ".changefeed-card",
+          ".callout",
+          ".start-rail__card",
+          ".stat-card",
+          ".feature-card",
+          ".doc-card",
+          ".panel",
+          ".comparison-card",
+          ".principle-card",
+          ".featured-doc",
+          ".checklist-card",
+          ".timeline-item",
+          ".architecture-flow__stage",
+          ".architecture-notes__item",
+          ".faq-item",
+          ".docs-hub__section",
+          ".docs-filters",
+          ".docs-search",
+          ".docs-toc__inner",
+          ".docs-pager__link"
+        ];
+
+        var elements = Array.prototype.slice.call(document.querySelectorAll(selectors.join(",")));
+        if (!elements.length) return;
+
+        elements.forEach(function (element, index) {
+          element.classList.add("reveal");
+          element.style.setProperty("--reveal-delay", Math.min(index * 55, 360) + "ms");
+        });
+
+        if (!("IntersectionObserver" in window)) {
+          elements.forEach(function (element) {
+            element.classList.add("is-visible");
+          });
+          return;
+        }
+
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          });
+        }, {
+          threshold: 0.14,
+          rootMargin: "0px 0px -48px 0px"
+        });
+
+        elements.forEach(function (element) {
+          observer.observe(element);
+        });
+      })();
+    </script>
   </body>
 </html>

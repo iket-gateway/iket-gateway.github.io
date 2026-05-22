@@ -1,0 +1,19 @@
+- title: Latest stable release
+  label: Release
+  summary: Iket v0.1.3 is the current published baseline for install, CLI, and deployment workflows.
+  url: https://github.com/bhangun/iket/releases
+
+- title: Docs moved into the website
+  label: Docs
+  summary: Installation, CLI, plugin, API, and reference guides now live as first-class website pages instead of repo-only markdown.
+  url: /docs/
+
+- title: Guided docs sections added
+  label: Structure
+  summary: Start Here, Core Docs, Plugin Docs, and Reference Notes now each have their own landing page and clearer navigation.
+  url: /docs/start-here/
+
+- title: Mobile docs navigation improved
+  label: UX
+  summary: Phone-sized browsing now has a mobile docs drawer, sticky docs actions, and stronger section awareness across pages.
+  url: /docs/

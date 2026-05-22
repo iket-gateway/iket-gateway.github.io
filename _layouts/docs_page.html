@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: page
 ---
 
 {% assign docs_pages = site.pages | where: "layout", "docs_page" | sort: "weight" | sort: "section_order" %}
@@ -15,41 +15,30 @@ layout: default
 
 {% assign previous_index = current_index | minus: 1 %}
 {% assign next_index = current_index | plus: 1 %}
+{% assign related_docs = site.pages | where: "layout", "docs_page" | where: "section", page.section %}
 
 <div class="docs-shell">
-  <aside class="docs-sidebar">
-    <div class="docs-sidebar__inner">
-      <p class="docs-sidebar__eyebrow">Iket Docs</p>
-      <h2 class="docs-sidebar__title">Documentation</h2>
-      <p class="docs-sidebar__summary">Browse installation, operations, plugin, and API guides from one place.</p>
-
-      <nav class="docs-nav" aria-label="Documentation">
-        {% for section in nav_sections %}
-          <section class="docs-nav__section">
-            <h3 class="docs-nav__heading">{{ section.name }}</h3>
-            <ul class="docs-nav__list">
-              {% assign section_items = section.items | sort: "weight" %}
-              {% for item in section_items %}
-                <li class="docs-nav__item">
-                  <a href="{{ item.url }}" class="docs-nav__link{% if item.url == page.url %} is-active{% endif %}">{{ item.title }}</a>
-                </li>
-              {% endfor %}
-            </ul>
-          </section>
-        {% endfor %}
-      </nav>
-    </div>
-  </aside>
-
   <article class="docs-content">
     <header class="docs-content__header">
-      <a class="docs-content__back" href="/docs/">Back to Docs Hub</a>
+      <nav class="docs-breadcrumbs" aria-label="Breadcrumb">
+        <a href="{{ '/' | relative_url }}">Home</a>
+        <span>/</span>
+        <a href="{{ '/docs/' | relative_url }}">Docs</a>
+        {% if page.section %}
+          <span>/</span>
+          <span>{{ page.section }}</span>
+        {% endif %}
+      </nav>
+      <a class="docs-content__back" href="{{ '/docs/' | relative_url }}">Back to Docs Hub</a>
       <h1 class="docs-content__title">{{ page.title }}</h1>
       {% if page.summary %}
         <p class="docs-content__summary">{{ page.summary }}</p>
       {% endif %}
-      {% if page.audience or page.topics %}
+      {% if page.section or page.audience or page.topics %}
         <div class="docs-meta" aria-label="Document metadata">
+          {% if page.section %}
+            <span class="docs-meta__chip docs-meta__chip--section">{{ page.section }}</span>
+          {% endif %}
           {% for label in page.audience %}
             <span class="docs-meta__chip docs-meta__chip--audience">{{ label }}</span>
           {% endfor %}
@@ -69,7 +58,7 @@ layout: default
         <div class="docs-pager__slot">
           {% if previous_index >= 0 %}
             {% assign previous_doc = flat_items[previous_index] %}
-            <a class="docs-pager__link docs-pager__link--prev" href="{{ previous_doc.url }}">
+            <a class="docs-pager__link docs-pager__link--prev" href="{{ previous_doc.url | relative_url }}">
               <span class="docs-pager__label">Previous</span>
               <span class="docs-pager__title">{{ previous_doc.title }}</span>
             </a>
@@ -78,7 +67,7 @@ layout: default
         <div class="docs-pager__slot docs-pager__slot--next">
           {% if next_index < flat_items.size %}
             {% assign next_doc = flat_items[next_index] %}
-            <a class="docs-pager__link docs-pager__link--next" href="{{ next_doc.url }}">
+            <a class="docs-pager__link docs-pager__link--next" href="{{ next_doc.url | relative_url }}">
               <span class="docs-pager__label">Next</span>
               <span class="docs-pager__title">{{ next_doc.title }}</span>
             </a>
@@ -86,5 +75,167 @@ layout: default
         </div>
       </nav>
     {% endif %}
+
+    {% if related_docs.size > 1 %}
+      <section class="related-docs">
+        <h2>Related in {{ page.section }}</h2>
+        <div class="docs-grid">
+          {% assign shown = 0 %}
+          {% for item in related_docs %}
+            {% if item.url != page.url and shown < 3 %}
+              <article class="doc-card">
+                <h3><a href="{{ item.url | relative_url }}">{{ item.title }}</a></h3>
+                {% if item.summary %}
+                  <p>{{ item.summary }}</p>
+                {% endif %}
+              </article>
+              {% assign shown = shown | plus: 1 %}
+            {% endif %}
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
   </article>
+
+  <aside id="docs-page-toc" class="docs-toc" data-docs-toc-root hidden>
+    <div class="docs-toc__inner">
+      <p class="docs-toc__eyebrow">On This Page</p>
+      <nav class="docs-toc__nav" aria-label="Table of contents">
+        <ul class="docs-toc__list" data-docs-toc></ul>
+      </nav>
+    </div>
+  </aside>
 </div>
+
+<script>
+  (function () {
+    var body = document.querySelector(".docs-content__body");
+    var tocRoot = document.querySelector("[data-docs-toc-root]");
+    var tocList = document.querySelector("[data-docs-toc]");
+    if (!body || !tocRoot || !tocList) return;
+
+    var headings = Array.prototype.slice.call(body.querySelectorAll("h2, h3"));
+    if (!headings.length) return;
+
+    function slugify(text) {
+      return text
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
+    }
+
+    var used = {};
+    var tocLinks = [];
+
+    headings.forEach(function (heading) {
+      var text = heading.textContent.trim();
+      if (!text) return;
+
+      if (!heading.id) {
+        var base = slugify(text) || "section";
+        var id = base;
+        var count = used[base] || 0;
+        if (count > 0) id = base + "-" + count;
+        used[base] = count + 1;
+        heading.id = id;
+      }
+
+      if (!heading.querySelector(".heading-anchor")) {
+        var anchor = document.createElement("a");
+        anchor.className = "heading-anchor";
+        anchor.href = "#" + heading.id;
+        anchor.setAttribute("aria-label", "Link to " + text);
+        anchor.textContent = "#";
+        heading.appendChild(anchor);
+      }
+
+      var li = document.createElement("li");
+      li.className = "docs-toc__item docs-toc__item--" + heading.tagName.toLowerCase();
+      var link = document.createElement("a");
+      link.className = "docs-toc__link";
+      link.href = "#" + heading.id;
+      link.textContent = text;
+      li.appendChild(link);
+      tocList.appendChild(li);
+      tocLinks.push({ heading: heading, link: link });
+    });
+
+    tocRoot.hidden = false;
+
+    function updateActiveToc() {
+      var current = null;
+      var offset = 140;
+
+      tocLinks.forEach(function (item) {
+        if (item.heading.getBoundingClientRect().top <= offset) {
+          current = item;
+        }
+      });
+
+      tocLinks.forEach(function (item) {
+        item.link.classList.toggle("is-active", current && current.link === item.link);
+      });
+    }
+
+    updateActiveToc();
+    document.addEventListener("scroll", updateActiveToc, { passive: true });
+  })();
+
+  (function () {
+    var blocks = Array.prototype.slice.call(document.querySelectorAll(".docs-content__body pre"));
+    if (!blocks.length) return;
+
+    function setLabel(button, text) {
+      button.textContent = text;
+    }
+
+    function copyText(text, button) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          setLabel(button, "Copied");
+          window.setTimeout(function () {
+            setLabel(button, "Copy");
+          }, 1400);
+        }).catch(function () {
+          setLabel(button, "Copy failed");
+          window.setTimeout(function () {
+            setLabel(button, "Copy");
+          }, 1400);
+        });
+        return;
+      }
+
+      var input = document.createElement("textarea");
+      input.value = text;
+      input.setAttribute("readonly", "");
+      input.style.position = "absolute";
+      input.style.left = "-9999px";
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      document.body.removeChild(input);
+      setLabel(button, "Copied");
+      window.setTimeout(function () {
+        setLabel(button, "Copy");
+      }, 1400);
+    }
+
+    blocks.forEach(function (block) {
+      var code = block.querySelector("code");
+      if (!code) return;
+
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "code-copy-button";
+      button.textContent = "Copy";
+      button.setAttribute("aria-label", "Copy code block");
+      button.addEventListener("click", function () {
+        copyText(code.innerText, button);
+      });
+
+      block.appendChild(button);
+    });
+  })();
+</script>

@@ -14,6 +14,10 @@ topics: [deployment, security, operations]
 
 This guide explains how to deploy Iket Gateway in production using Docker with full security features enabled, including TLS and mTLS for remote administration.
 
+<div class="doc-warning">
+  <p><strong>Production mindset:</strong> treat this guide as the hardened path after you already understand installation and CLI basics. It is about safe runtime posture, not just getting the gateway to start.</p>
+</div>
+
 ## Overview
 
 A production Iket setup includes:
@@ -44,6 +48,10 @@ After a standard installation, your production environment should look like this
 
 The easiest way to set up a production-ready environment is using the ultimate installer:
 
+<div class="doc-warning">
+  <p><strong>Production caution:</strong> keep admin endpoints behind trusted network boundaries whenever possible, and do not rely on public exposure alone even when mTLS is enabled.</p>
+</div>
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/bhangun/iket/main/scripts/install.sh | bash
 ```
@@ -55,6 +63,10 @@ This script will:
 4. Generate a full mTLS certificate chain in `~/.iket/certs`.
 5. Create default production configurations.
 6. Configure and enable a systemd service (`iket.service`).
+
+<div class="doc-tip">
+  <p><strong>Recommended approach:</strong> use the installer or `iket server init` to create the initial scaffold, then make environment-specific certificate, hostname, storage, and network decisions before exposing the gateway to real traffic.</p>
+</div>
 
 ---
 
@@ -89,6 +101,10 @@ For production, it is **mandatory** to use TLS 1.3 and mTLS for the management A
 - **Firewall**: Only expose port `443` (public traffic) and `8443` (management traffic) if necessary. Ideally, keep `8443` behind a VPN.
 - **Certificate Rotation**: Regularly rotate client certificates and the Server TLS certificate.
 - **Non-root**: Always run the gateway as a non-privileged user (the default Docker image uses `iketuser`).
+
+<div class="doc-note">
+  <p><strong>Operator check:</strong> verify DNS names, certificate SANs, firewall rules, and which networks can actually reach the management port before handing the deployment to remote administrators.</p>
+</div>
 
 ---
 
@@ -169,3 +185,16 @@ chmod 700 ~/.iket/certs
 1. Adjust `readTimeout` and `writeTimeout` in `config.yaml` based on your backend latency.
 2. Enable `GOGC` tuning for memory-intensive workloads.
 3. Use `iket-prod` binary (built via `make build-prod`) for optimized static linking.
+
+## Next Steps
+
+<div class="docs-grid">
+  <article class="doc-card">
+    <h3><a href="{{ '/docs/cli-commands/' | relative_url }}">Use safe admin workflows</a></h3>
+    <p>After the gateway is deployed, the CLI reference is the next stop for context management, diffing, proposals, canaries, and revision-aware changes.</p>
+  </article>
+  <article class="doc-card">
+    <h3><a href="{{ '/docs/management-api-integration/' | relative_url }}">Automate the control surface</a></h3>
+    <p>If production changes will come from automation, continue into the management API guide and mirror the same safety model outside the CLI.</p>
+  </article>
+</div>

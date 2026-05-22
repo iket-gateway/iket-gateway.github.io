@@ -14,6 +14,10 @@ topics: [plugins, extension, architecture]
 
 This guide explains how to create custom plugins for the Iket API Gateway. Plugins allow you to extend the gateway's functionality with custom middleware, authentication, validation, and more.
 
+<div class="doc-note">
+  <p><strong>Best fit:</strong> read this after the quickstart if you are planning real plugin work with configuration, lifecycle hooks, health reporting, or reload behavior.</p>
+</div>
+
 ## Table of Contents
 
 1. [Plugin Architecture](#plugin-architecture)
@@ -31,6 +35,10 @@ This guide explains how to create custom plugins for the Iket API Gateway. Plugi
 
 ## Plugin Architecture
 
+<div class="doc-tip">
+  <p><strong>Good engineering path:</strong> begin with the smallest interface surface you need, then add lifecycle, health, or reload support only when the plugin’s operational behavior actually requires it.</p>
+</div>
+
 Iket uses a plugin system that supports multiple interfaces:
 
 - **Basic Plugin**: Core functionality (name, initialization)
@@ -41,6 +49,7 @@ Iket uses a plugin system that supports multiple interfaces:
 - **Health Checker**: Health monitoring
 - **Status Reporter**: Status reporting
 - **Reloadable Plugin**: Hot-reload support
+- **Usage Observer**: Client usage event sink for metering, billing, and export plugins
 
 ## Plugin Interfaces
 
@@ -88,12 +97,96 @@ type StatusReporter interface {
     Status() string
 }
 
+// Diagnostics reporter interface
+type DiagnosticsReporter interface {
+    Diagnostics() map[string]interface{}
+}
+
 // Reloadable plugin interface
 type ReloadablePlugin interface {
     Plugin
     Reload(config map[string]interface{}) error
 }
+
+// Client usage observer interface
+type ClientUsageObserver interface {
+    Plugin
+    ObserveClientUsage(context.Context, ClientUsageEvent)
+}
 ```
+
+For compatibility with older plugins, registry type discovery also accepts
+plugins that expose `Type() string`. Prefer `TypedPlugin` for new code, but
+`registry.GetByType(...)` discovers both shapes and returns plugins in
+deterministic name order. Registry bulk operations such as initialize, start,
+shutdown, reload, health checks, status collection, and tag-discovered
+middleware chain construction snapshot plugins by name before invoking plugin
+code, which keeps extension behavior stable and avoids holding registry locks
+inside plugin callbacks. Global auto-discovered plugins use the same sorted
+snapshot before registration, so plugin `Name()` implementations cannot
+deadlock by touching global registration during startup. Direct registration
+rejects nil plugins, empty names, and panicking `Name()` implementations with
+plugin errors. Factory-backed plugins are loaded lazily through
+`registry.Get(...)`; concurrent callers for the same factory wait on the first
+load, and factory code runs outside the registry lock so factories can safely
+register or inspect related plugins. Nil factories, nil plugin returns, and
+invalid factory-created plugins are reported as plugin errors instead of being
+cached as broken registry entries.
+
+### Client Usage Observer
+
+`ClientUsageObserver` is the integration point for plugins that need API-key
+usage and metering data. Community plugins can rely on the core API-key plugin
+to emit redacted usage events for local observability. Enterprise billing,
+usage-export, or finance-system plugins can implement this observer to consume
+the same event stream without requiring raw API keys or gateway-internal request
+state.
+
+Observer events are intentionally export-friendly. They include a
+`schema_version`, `event_id`, `quantity`, normalized aggregation dimensions,
+request attribution, response status, response bytes, and duration. If the
+request path panics after attribution, Iket still reports a panic-safe `500`
+outcome so metering does not silently lose failed traffic. Events must not carry
+raw secrets, raw API keys, or unredacted credential headers/query parameters.
+Before forwarding events to an external billing or analytics system, call the
+core usage-event validation helper so malformed events fail fast instead of
+silently corrupting usage exports.
+The API-key plugin can deliver observers synchronously, which is the default,
+or asynchronously with `usage_observer_async: true` for exporters that should
+not add request latency. Async observer delivery detaches from request
+cancellation while keeping context values available to observer plugins, and it
+still enforces the configured usage observer timeout. Use
+`usage_observer_async_max_in_flight` to bound async exporter pressure; saturated
+dispatch drops new observer deliveries instead of allowing unbounded goroutine
+growth on busy gateways.
+Plugins that expose operational state should implement `DiagnosticsReporter`.
+Management plugin list/detail responses include a stable `capabilities` array
+derived from the interfaces a plugin implements, such as `middleware`,
+`health`, `status_reporter`, `diagnostics`, `client_usage_observer`, or
+`client_usage_registrar`. List responses also include a compact diagnostics
+summary, while detail/status endpoints include the full structured diagnostics
+payload. This lets automation cheaply scan plugin health and capability support
+from list responses, then read counters, modes, named/unnamed observer counts,
+and safe integration names from the detail/status endpoints without parsing the
+human-facing `Status()` string.
+Use the plugin list filters `type`, `enabled`, `status`, `diagnostics_status`,
+and repeatable or comma-separated `capability`/`capabilities` when building
+dashboards or CLIs that only need plugins with a specific extension seam.
+The list response also includes summary facets by type, health status,
+diagnostics status, and capability so tooling can render navigation/filter
+controls without rescanning the full plugin array. Registry-backed plugin lists
+are sorted by plugin name, including factory-backed plugins, which keeps
+management API and CLI inventory output stable across runs.
+`StatusReporter` is still useful for concise human status text, but a plugin
+that only implements `DiagnosticsReporter` can still be served by
+`/api/v1/plugins/{name}/status`; the response marks whether the top-level
+status came from `status_reporter` or `diagnostics`.
+Prefer stable machine-readable status and warning codes for alerts instead of
+scraping prose.
+The core API-key metering path preserves normal `http.ResponseWriter`
+capabilities, including flush, delegated stream copy, HTTP/2 push, and close
+notifications when the underlying server supports them, so observers can rely
+on metering without changing handler behavior.
 
 ### Plugin Types
 
@@ -168,6 +261,10 @@ func (p *MyPlugin) Initialize(config map[string]interface{}) error {
 - Return error if shutdown fails
 
 ## Configuration
+
+<div class="doc-warning">
+  <p><strong>Watch your config parsing carefully:</strong> plugin configuration arrives through generic maps, so defensive validation and clear defaults matter a lot if you want predictable runtime behavior.</p>
+</div>
 
 Plugins receive configuration through the `Initialize()` method:
 
@@ -474,6 +571,19 @@ func (p *MyPlugin) Middleware(next http.Handler) http.Handler {
 ```
 
 ## Examples
+
+## Next Steps
+
+<div class="docs-grid">
+  <article class="doc-card">
+    <h3><a href="{{ '/docs/plugin-examples/' | relative_url }}">Study plugin examples</a></h3>
+    <p>Use the examples page to compare structures and implementation styles after you understand the core interfaces.</p>
+  </article>
+  <article class="doc-card">
+    <h3><a href="{{ '/docs/cli-commands/' | relative_url }}">Operate plugins with the CLI</a></h3>
+    <p>Return to the CLI reference when you are ready to inspect, enable, disable, or diff plugin configuration in real gateway workflows.</p>
+  </article>
+</div>
 
 ### Example 1: Request Logger Plugin
 

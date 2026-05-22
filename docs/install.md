@@ -12,7 +12,15 @@ topics: [installation, deployment, cli]
 
 # 🧶 Iket Installation Guide
 
+<div class="doc-note">
+  <p><strong>Choose this guide when:</strong> you need your first Iket setup, want to decide between full gateway and CLI-only installation, or need a Docker-oriented bootstrap path for a remote host.</p>
+</div>
+
 ## Quick Install
+
+<div class="doc-tip">
+  <p><strong>Recommended path:</strong> use the prebuilt installer first unless you specifically need to test unreleased source changes or build custom binaries locally.</p>
+</div>
 
 ### Linux/macOS (Recommended)
 
@@ -52,6 +60,10 @@ This script automates everything for you:
 
 ## Installation Modes
 
+<div class="doc-tip">
+  <p><strong>Fast decision rule:</strong> choose full gateway for the machine that will run traffic, choose CLI-only for an admin laptop, and choose source builds only when you are contributing or validating unreleased code.</p>
+</div>
+
 ### 1. Full Gateway Setup (Default)
 Installs the Iket Gateway server, the CLI tool, generates certificates, and sets up a system service. Use this on the machine that will act as your API Gateway.
 
@@ -60,6 +72,10 @@ Installs only the `iket` client binary and creates the configuration directory. 
 
 ### 3. Source Build Setup (`--from-source`)
 Uses the local toolchain to clone and build from source. Use this if you are contributing, testing unreleased changes, or explicitly do not want prebuilt release binaries.
+
+<div class="doc-note">
+  <p><strong>Note:</strong> prebuilt release assets are the simplest path for production and operator setups. Source builds are best reserved for development, patch validation, or contributor workflows.</p>
+</div>
 
 ---
 
@@ -93,6 +109,10 @@ curl -fsSL https://raw.githubusercontent.com/bhangun/iket/main/scripts/install.s
 
 ## Manual Installation
 
+<div class="doc-note">
+  <p><strong>Use manual installation when:</strong> the target host cannot use the installer directly, you need more control over the build path, or you are preparing a locked-down environment.</p>
+</div>
+
 ### From Source
 
 If you prefer to install manually or don't have internet access on the target machine:
@@ -115,6 +135,10 @@ sudo install -m 755 bin/iket /usr/local/bin/
 ```
 
 ## 🐳 Remote Docker Installation
+
+<div class="doc-warning">
+  <p><strong>Important:</strong> make sure the server certificate SANs include the real hostname or IP your remote operators will use. If they do not match, CLI mTLS connections will fail even when the gateway itself is running correctly.</p>
+</div>
 
 To run Iket on a remote server using Docker, you do not need the source repository. The recommended path is the prebuilt image.
 
@@ -250,6 +274,19 @@ security:
     requireNoteForHighImpact: true
     requireChangeRefForHighImpact: true
     requireDifferentReviewerForProposals: true
+
+## Next Steps
+
+<div class="docs-grid">
+  <article class="doc-card">
+    <h3><a href="{{ '/docs/cli-commands/' | relative_url }}">Learn the CLI path</a></h3>
+    <p>After installation, use the command reference to verify access, test contexts, inspect gateway status, and understand safe change workflows.</p>
+  </article>
+  <article class="doc-card">
+    <h3><a href="{{ '/docs/production-deployment/' | relative_url }}">Prepare production deployment</a></h3>
+    <p>If this setup is heading toward production, move next into the deployment guide for mTLS hardening, Docker operations, and runtime safety.</p>
+  </article>
+</div>
     minApproversForHighImpactProposals: 2
     requireNotBeforeForHighImpactProposals: true
     requireVerificationForPromotedHighImpactProposals: true
