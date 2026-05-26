@@ -33,6 +33,14 @@ Use this section when you already understand the main setup flow and need deeper
     <p>Understand the management surface and structured API contract in more formal detail.</p>
   </article>
   <article class="doc-card">
+    <h3><a href="{{ '/docs/config-yaml-specification/' | relative_url }}">config.yaml Specification</a></h3>
+    <p>Review the gateway process configuration for server, TLS, storage, identity, authorization, plugins, and global presets.</p>
+  </article>
+  <article class="doc-card">
+    <h3><a href="{{ '/docs/service-yaml-specification/' | relative_url }}">service.yaml Specification</a></h3>
+    <p>Review service, route, backend, transform, protocol, BFF, and route-policy fields used with <code>--services</code>.</p>
+  </article>
+  <article class="doc-card">
     <h3><a href="{{ '/docs/config-storage/' | relative_url }}">Config Storage</a></h3>
     <p>Compare file-based and PostgreSQL-backed configuration approaches.</p>
   </article>

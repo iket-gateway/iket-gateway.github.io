@@ -25,6 +25,10 @@ docs:
         url: /docs/api-key-management/
       - title: API Specification
         url: /docs/api-specification/
+      - title: config.yaml Specification
+        url: /docs/config-yaml-specification/
+      - title: service.yaml Specification
+        url: /docs/service-yaml-specification/
       - title: Config Storage
         url: /docs/config-storage/
       - title: Editions
