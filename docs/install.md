@@ -16,6 +16,10 @@ topics: [installation, deployment, cli]
   <p><strong>Choose this guide when:</strong> you need your first Iket setup, want to decide between full gateway and CLI-only installation, or need a Docker-oriented bootstrap path for a remote host.</p>
 </div>
 
+<div class="doc-tip">
+  <p><strong>New local default:</strong> <code>iket server run</code> now creates <code>config/config.yaml</code>, <code>config/service.yaml</code>, and <code>docker-compose.yaml</code> automatically on first run, and it defaults to file-backed configuration unless you explicitly enable database mode.</p>
+</div>
+
 ## Quick Install
 
 <div class="doc-tip">
@@ -134,6 +138,141 @@ sudo install -m 755 bin/iket /usr/local/bin/
 ./bin/iket cert gen --cert-dir ~/.iket/certs
 ```
 
+### First Local Server Start
+
+For a local bring-up after installation:
+
+```bash
+iket server run
+```
+
+This first run will create:
+
+- `config/config.yaml`
+- `config/service.yaml`
+- `docker-compose.yaml`
+
+and then start the server with the generated file-backed config.
+
+The generated `config/service.yaml` now also includes starter `identityProjectionPresets` entries for:
+
+- `minimal_user`
+- `service_identity`
+- `tenant_only`
+
+That gives teams a ready-made catalog for normalized upstream identity forwarding instead of starting from a blank route file.
+
+If those files already contain the exact older starter scaffold, Iket now refreshes them automatically to the newer file-backed defaults, prints a `Refreshed legacy scaffold defaults` notice, and keeps timestamped backup copies first.
+
+If you want to generate the scaffold without starting the server:
+
+```bash
+iket server run --init-only
+iket server run --init-only --json
+```
+
+If you already have older local files and want to intentionally replace them with the new defaults:
+
+```bash
+iket server run --reset-defaults --init-only
+```
+
+That reset flow keeps timestamped backups of the previous files, for example:
+
+- `config/config.yaml.20260525-124500.bak`
+- `config/service.yaml.20260525-124500.bak`
+- `docker-compose.yaml.20260525-124500.bak`
+
+You can inspect and restore those backups later with:
+
+```bash
+iket server backups
+iket server backups --json
+iket server restore --latest --kind config --preview
+iket server restore --latest --kind config --preview --json
+iket server restore --backup ./config/config.yaml.20260525-124500.bak
+iket server restore --backup ./config/config.yaml.20260525-124500.bak --json
+iket server restore --latest --kind config --force
+iket server restore --all --latest --preview
+iket server restore --all --latest --force
+iket server restore --latest --kind config
+```
+
+Non-preview restores now ask for confirmation by default. Use the global `--force` flag only when you intentionally want to skip that prompt.
+
+If you want PostgreSQL as the primary config store from startup, opt in explicitly:
+
+```bash
+iket server run --database --username foo --password "$MY_PASSWORD" --database-name mydb
+```
+
+For daemon-style local runs, the default artifact location stays scaffold-local under `./logs`, which keeps logs and pid files attached to the same project config:
+
+```bash
+iket server run -d
+iket server run -d --json
+iket server status
+iket server status --json
+iket server doctor --mode docker --json
+iket server logs --tail 100
+iket server logs --tail 100 --json
+iket server stop
+iket server stop --json
+```
+
+If you intentionally want a shared user-level location instead, you can override it:
+
+```bash
+iket server run -d --log-dir ~/.iket/logs --pid-dir ~/.iket/run
+```
+
+### Update Installed Binaries
+
+Once Iket is already installed, you can refresh the local binaries through the CLI instead of retyping the installer command manually:
+
+```bash
+iket update
+iket update status
+iket update status --json
+iket update plan
+iket update plan --json
+iket update --check-only --json
+iket update --check-only
+```
+
+That reuses the repository installer flow. Useful variants:
+
+```bash
+iket update --from-source
+iket update --cli-only
+```
+
+`--from-source` rebuilds from the current checkout. `--cli-only` updates only the `iket` client binary.
+
+### Run Migrations Without Starting Traffic
+
+If you want scaffold refresh and storage migrations without starting the gateway listeners, use:
+
+```bash
+iket migrate
+```
+
+Common examples:
+
+```bash
+iket migrate status
+iket migrate status --json
+iket migrate plan
+iket migrate plan --json
+iket migrate --check-only
+iket migrate --check-only --json
+iket migrate --database --username foo --password "$MY_PASSWORD" --database-name mydb
+iket migrate --storage sqlite --sqlite-path .iket-admin/sqlite/iket.db
+iket migrate --print-config
+```
+
+This runs `iket-server` in migrate-only mode, which is useful after upgrades when you want database schema setup or file refresh behavior to happen before a real `iket server run`.
+
 ## 🐳 Remote Docker Installation
 
 <div class="doc-warning">
@@ -154,6 +293,8 @@ If you already have `iket` available on the remote server, the quickest way is:
 
 ```bash
 iket server init --mode docker --output ~/iket-docker --with-systemd
+iket server init --mode docker --output ~/iket-docker --json
+iket server init --mode docker --output ~/iket-docker --json --dry-run
 cd ~/iket-docker
 docker compose up -d
 iket server doctor --mode docker --output ~/iket-docker
@@ -163,6 +304,8 @@ This generates the same compose/config scaffold automatically, plus:
 - `.env` for image and port overrides
 - `config/service.yaml` for service and route definitions
 - `iket-docker.service` if `--with-systemd` is used
+
+That generated `config/service.yaml` also includes the same starter `identityProjectionPresets` catalog used by `iket server run`, so protected routes can adopt normalized identity forwarding without hand-writing the preset block first.
 
 The generated Docker scaffold also runs the container with the host UID/GID by default. That is important because Iket auto-generates certs and writes cert/log files into mounted host directories, and the container user must be able to write to those paths.
 
@@ -233,9 +376,7 @@ security:
     blockedApplyWindows: []
 
 storage:
-  mode: "postgres"
-  postgres_url: "${IKET_POSTGRES_URL:-postgres://iket:iket@postgres:5432/iket?sslmode=disable}"
-  mirror_files: true
+  mode: "file"
 ```
 
 Then start the container:
@@ -317,7 +458,7 @@ If the certs do not appear, check `.env` and confirm the container is running wi
 - `IKET_UID`
 - `IKET_GID`
 
-The generated Docker stack also includes an internal `postgres` service for Iket itself. It is only reachable on the Docker network by default, so it does not consume a host PostgreSQL port unless you choose to publish one yourself.
+The generated Docker stack now defaults to file-backed config for the Iket container itself. If you want PostgreSQL as the primary config store for that runtime, switch the generated config intentionally and provide the matching database connection settings.
 
 If startup fails with:
 
@@ -454,6 +595,7 @@ You can re-check the deployment scaffold and local runtime state at any time wit
 iket server doctor --mode docker --output ~/iket-docker
 iket server doctor --mode docker --output ~/iket-docker --context remote-prod
 iket server doctor --mode docker --output ~/iket-docker --url https://103.16.199.4:8443
+iket server doctor --mode docker --output ~/iket-docker --json
 ```
 
 `server doctor --mode docker` now also checks:
@@ -464,14 +606,24 @@ iket server doctor --mode docker --output ~/iket-docker --url https://103.16.199
 - whether the generated `server.crt` SANs actually cover the configured `security.tls.serverNames` / `serverIPs`
 - whether the generated `server.crt` covers a real target admin URL when `--url` is provided
 
+For automation or CI output, you can now also use:
+
+```bash
+iket server doctor --mode docker --json
+iket server doctor --mode host --json
+```
+
 ## 🖥️ Host Installation Scaffold
 
 For a host-native deployment without Docker:
 
 ```bash
 iket server init --mode host --output ~/iket-host --with-systemd
+iket server init --mode host --output ~/iket-host --json
+iket server init --mode host --output ~/iket-host --json --dry-run
 iket-server --config ~/iket-host/config/config.yaml
 iket server doctor --mode host --output ~/iket-host
+iket server doctor --mode host --output ~/iket-host --json
 ```
 
 This scaffold creates:
@@ -481,7 +633,7 @@ This scaffold creates:
 - `iket.service` if `--with-systemd` is used
 - `certs/`
 - `logs/`
-- PostgreSQL connection defaults via `.env`
+- file-backed startup defaults via `config/config.yaml` and `config/service.yaml`
 
 If you generated a systemd unit for host mode, install it with:
 
@@ -498,7 +650,7 @@ sudo systemctl enable --now iket
 - `iket-server` binary presence in `PATH`
 - optional CLI context verification
 
-Both scaffold modes now start Iket with `--config ... --services ...`, so `service.yaml` is active from first boot and file mirroring remains consistent when SQLite is the primary store.
+Both scaffold modes now start Iket with `--config ... --services ...`, so `service.yaml` is active from first boot. For simple local bring-up, `iket server run` uses the same file-based config paths by default and only switches to PostgreSQL when `--database` is provided.
 
 ### 2. Bootstrap CLI Access
 The default and recommended config is:

@@ -54,4 +54,8 @@ Use this section when you are bringing Iket up for the first time, validating op
     <h3><a href="{{ '/docs/management-api-integration/' | relative_url }}">Management API Integration</a></h3>
     <p>Move into secure remote automation once the human-operated workflow is already working.</p>
   </article>
+  <article class="doc-card">
+    <h3><a href="{{ '/docs/contributing/' | relative_url }}">Contributing to Iket</a></h3>
+    <p>Use the maintainer and coding-agent workflow when you are changing the Iket codebase itself.</p>
+  </article>
 </div>

@@ -73,7 +73,7 @@ curl -fsSL https://raw.githubusercontent.com/bhangun/iket/main/scripts/install.s
 Start the gateway:
 
 ```bash
-iket-server --config ~/.iket/config.yaml
+iket server run
 ```
 
 Connect the CLI:
@@ -87,6 +87,23 @@ For installation modes, Docker setup, route configuration, proposal workflows, a
 
 <div class="callout">
   <p><strong>Best starting path:</strong> install the gateway, connect the CLI, then move into the docs hub for deployment, management, and plugin guides.</p>
+</div>
+
+## Pick a Docs Track
+
+<div class="docs-grid">
+  <div class="doc-card">
+    <h3><a href="{{ '/docs/start-here/' | relative_url }}">Operator docs</a></h3>
+    <p>Use this track when you are bringing up, deploying, administering, or troubleshooting a gateway.</p>
+  </div>
+  <div class="doc-card">
+    <h3><a href="{{ '/docs/contributing/' | relative_url }}">Contributor docs</a></h3>
+    <p>Use this track when you are changing the Iket codebase and need maintainer, coding-agent, and validation guidance.</p>
+  </div>
+</div>
+
+<div class="callout">
+  <p><strong>Contributor shortcut:</strong> the contributor track leads to direct repository guidance links for <a href="{{ site.repository_url }}/blob/main/AGENT.md">AGENT.md</a> and <a href="{{ site.repository_url }}/blob/main/SKILLS.md">SKILLS.md</a>.</p>
 </div>
 
 ## Core Capabilities

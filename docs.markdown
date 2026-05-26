@@ -25,6 +25,23 @@ This website is now the canonical home for Iket documentation. Product guides ar
   <p><strong>Suggested reading path:</strong> start with installation, move into CLI workflows, then use management, plugin, and reference docs as your deployment gets deeper.</p>
 </div>
 
+## Choose Your Path
+
+<div class="docs-grid">
+  <article class="doc-card">
+    <h3><a href="{{ '/docs/start-here/' | relative_url }}">I am operating Iket</a></h3>
+    <p>Choose this path for installation, local bring-up, CLI workflows, deployment guidance, and runtime operations.</p>
+  </article>
+  <article class="doc-card">
+    <h3><a href="{{ '/docs/contributing/' | relative_url }}">I am contributing to Iket</a></h3>
+    <p>Choose this path when you are changing the Iket codebase and need maintainer, coding-agent, testing, and workflow guidance.</p>
+  </article>
+</div>
+
+<div class="callout">
+  <p><strong>Maintainer shortcut:</strong> the contributing path also links directly to the repository guidance files <a href="{{ site.repository_url }}/blob/main/AGENT.md">AGENT.md</a> and <a href="{{ site.repository_url }}/blob/main/SKILLS.md">SKILLS.md</a> for coding-agent and maintainer workflows.</p>
+</div>
+
 ## Recent Updates
 
 <div class="changefeed-grid">

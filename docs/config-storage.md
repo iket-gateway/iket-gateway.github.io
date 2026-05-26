@@ -5,21 +5,21 @@ permalink: /docs/config-storage/
 section: Core Docs
 section_order: 2
 weight: 3
-summary: Understand how Iket stores configuration and state, including the PostgreSQL-first model and file mirroring behavior.
+summary: Understand how Iket stores configuration and state, including the default file-backed startup flow and the optional PostgreSQL-backed path.
 audience: [operator, developer]
 topics: [configuration, storage, operations]
 ---
 
 # Config Storage
 
-Iket now defaults to PostgreSQL as the primary config/state store, with
-`config.yaml` and `service.yaml` remaining the user-facing mirror/import format.
+Iket now defaults to file-backed configuration for first local startup. When you run `iket server run` without database flags, the server uses:
 
-That default is aimed at safer admin operations while preserving a file-based UX:
+- `config/config.yaml`
+- `config/service.yaml`
 
-- transactional updates in the primary store
-- YAML remains easy to inspect and edit
-- mirrored files still fit Git-based workflows
+as the active configuration source and generates those files automatically when they are missing.
+
+If you want PostgreSQL as the primary store, opt in explicitly with `iket server run --database ...`.
 
 ## Future-Proof Storage Model
 
@@ -39,18 +39,22 @@ Examples:
 
 ## Recommendation
 
-Current default:
+Current local-first default:
+
+- server primary store: file-backed `config.yaml` and `service.yaml`
+- user-facing format: the same files you edit and commit
+
+Optional database-backed mode:
 
 - server primary store: PostgreSQL
 - user-facing mirror/export: `config.yaml` and optional `service.yaml`
 
-That means admin changes made through `iket` are persisted to PostgreSQL first, then mirrored back to files.
+That means admin changes made through `iket` can either stay file-primary for simple local deployments, or be persisted to PostgreSQL first when you explicitly choose database mode.
 
-Storage modes:
+Practical startup choices:
 
-- `--storage=postgres` (default): PostgreSQL primary, file mirror/bootstrap
-- `--storage=sqlite`: SQLite primary, file mirror/bootstrap
-- `--storage=file`: legacy file-primary mode
+- `iket server run` (default): file-backed startup
+- `iket server run --database ...`: PostgreSQL-backed startup
 
 ## Schema Versioning
 
@@ -65,8 +69,8 @@ Current schema version:
 
 Recommended direction:
 
-- Docker / managed installs: PostgreSQL primary
-- local fallback / very small installs: SQLite primary
+- local development or single-host bring-up: file-backed startup
+- managed or shared environments that need a database source of truth: PostgreSQL-backed startup
 - operator UX: keep file import/export and optional mirroring
 
 ## Why Not Switch Immediately?
@@ -78,4 +82,4 @@ A database is not automatically faster for the current workload. Iket config is 
 - richer audit/history possibilities
 - better multi-process or multi-node coordination
 
-The current file-based mode remains fully supported. Database-backed modes preserve file import/export so operators can still work with declarative config files.
+The current file-based mode is the default local experience. Database-backed modes preserve file import/export so operators can still work with declarative config files when they need a stronger shared source of truth.

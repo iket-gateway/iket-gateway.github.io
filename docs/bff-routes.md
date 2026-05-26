@@ -58,11 +58,13 @@ services:
 - `steps` are called in parallel by default.
 - `mode: sequential` runs steps in order, which is useful when later steps use earlier step output.
 - `required` defaults to `true`; required failures return `502`.
+- `allowPartialResponse: true` lets required step failures become response data instead of failing the whole BFF route.
 - Step templates that reference {% raw %}`{{step.name...}}`{% endraw %} automatically wait for that step while unrelated steps still run in parallel.
 - `successStatusCodes` lets a step treat domain-valid statuses such as `404` as successful.
-- Optional step failures can still be reflected with fields such as {% raw %}`{{step.subscription.ok}}`{% endraw %}.
+- Optional or partial step failures can still be reflected with fields such as {% raw %}`{{step.subscription.ok}}`{% endraw %} and {% raw %}`{{step.subscription.error}}`{% endraw %}.
 - `responseFields` builds the final JSON response with the same dotted field style used by route transforms.
 - `responseStatus` defaults to `200`; set it to a literal status or a template when a BFF command needs another success code.
+- `partialResponseStatus` can override the final HTTP status, such as `207`, when any completed step failed but the BFF route still responds.
 - `responseHeaders` sets final client response headers after templates are resolved.
 - `maxStepResponseBodyBytes` caps buffered upstream step bodies; each step can override it with `maxResponseBodyBytes`.
 - `bff.enabled` can be changed through live config updates or provider reloads without restarting the gateway.
@@ -85,6 +87,8 @@ bff:
 In default parallel mode, steps without dependencies start immediately. A dependent step waits for every inferred or listed dependency, then receives those dependency results as template inputs. Dependencies must reference existing steps and cannot contain cycles.
 
 Iket validates {% raw %}`{{step.name...}}`{% endraw %} template references at load time. Response templates can reference any step. Step-local templates such as `url`, `headers`, `queryParams`, `body`, `when`, `cacheKey`, and `fallback` infer dependencies automatically in default parallel mode, or can reference earlier steps when `mode: sequential` is used.
+
+When `includeMeta: true` is enabled, the response meta includes top-level `partial`, `degraded`, step counts, `completed_steps`, `failed_steps`, `skipped_steps`, and `errors` fields. Each step also reports `dependencies`, `explicit_dependencies`, and `inferred_dependencies`, making the executed BFF graph visible without changing route behavior.
 
 ## Conditional Steps
 
@@ -114,6 +118,8 @@ bff:
     Cache-Control: "private, max-age=30"
     Vary: "Authorization, X-Client-Mode"
     X-BFF-User: "{{step.profile.json.id}}"
+    X-BFF-Partial: "{{bff.partial}}"
+    X-BFF-Failed-Steps: "{{bff.failed_steps | join: ','}}"
     X-Request-Id: "{{request_id}}"
 ```
 
@@ -121,11 +127,12 @@ Iket still sets its normal JSON and gateway headers by default. Values in `respo
 
 ## Response Status
 
-BFF routes return `200` by default after all required steps succeed. Use `responseStatus` when the composed endpoint should expose another final status.
+BFF routes return `200` by default after all required steps succeed. Use `responseStatus` when the composed endpoint should expose another final status. Use `partialResponseStatus` when degraded but successful BFF responses should have a distinct HTTP status.
 
 ```yaml
 bff:
   responseStatus: "{{step.create.status}}"
+  partialResponseStatus: 207
   steps:
     - name: create
       method: POST
@@ -278,8 +285,20 @@ Each BFF upstream step emits structured logs with route, step, required flag, st
 | {% raw %}`{{request_id}}`{% endraw %} | Gateway request ID |
 | {% raw %}`{{request_body}}`{% endraw %} | Incoming request body for forwarding |
 | {% raw %}`{{request.json.path}}`{% endraw %} | Value from the incoming JSON request body |
+| {% raw %}`{{bff.partial}}`{% endraw %} | `true` when at least one completed BFF step failed |
+| {% raw %}`{{bff.degraded}}`{% endraw %} | `true` when at least one completed BFF step failed or was skipped |
+| {% raw %}`{{bff.total_steps}}`{% endraw %} | Number of BFF steps considered in the response summary |
+| {% raw %}`{{bff.completed_steps}}`{% endraw %} | Array of completed step names |
+| {% raw %}`{{bff.completed_count}}`{% endraw %} | Number of completed steps |
+| {% raw %}`{{bff.failed_steps}}`{% endraw %} | Array of failed step names |
+| {% raw %}`{{bff.skipped_steps}}`{% endraw %} | Array of skipped step names |
+| {% raw %}`{{bff.errors}}`{% endraw %} | Object mapping failed step names to error text |
+| {% raw %}`{{bff.error_summary}}`{% endraw %} | Compact failed-step error summary string |
+| {% raw %}`{{bff.failed_count}}`{% endraw %} | Number of failed steps |
+| {% raw %}`{{bff.skipped_count}}`{% endraw %} | Number of skipped steps |
 | {% raw %}`{{step.name.status}}`{% endraw %} | Upstream HTTP status |
 | {% raw %}`{{step.name.ok}}`{% endraw %} | `true` when the step completed with a 2xx or 3xx response |
+| {% raw %}`{{step.name.error}}`{% endraw %} | Step error text, including unsuccessful upstream statuses |
 | {% raw %}`{{step.name.body}}`{% endraw %} | Raw upstream response body |
 | {% raw %}`{{step.name.attempts}}`{% endraw %} | Number of attempts used by the step, including retries |
 | {% raw %}`{{step.name.cache_hit}}`{% endraw %} | `true` when the step was served from the local BFF cache |
@@ -298,7 +317,9 @@ Add `| required` or `| required:message` when a missing value should fail instea
 
 Use encoding filters when inserting dynamic values into structured strings: `| json` writes a JSON literal, `| urlquery` escapes a query value, and `| urlpath` escapes a path segment. Filters can be chained, for example {% raw %}`{{request.json.name | default:Guest | json}}`{% endraw %}.
 
-Wildcard arrays can be reshaped with `| len` or `| join:separator`, for example {% raw %}`{{request.json.items[].sku | len}}`{% endraw %} or {% raw %}`{{step.catalog.json.products[].id | join:, | urlquery}}`{% endraw %}.
+String values can be normalized with `| trim`, `| lower`, `| upper`, and `| replace:old,new`, for example {% raw %}`{{request.json.name | trim | lower | replace: ,- | urlpath}}`{% endraw %}.
+
+Wildcard arrays can be reshaped with `| len`, `| join:separator`, `| first`, `| last`, `| compact`, and `| unique`, for example {% raw %}`{{request.json.items[].sku | compact | unique | join: ',' | urlquery}}`{% endraw %}.
 
 ## Growth Path
 
